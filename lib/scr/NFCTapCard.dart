@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:ikwimpay/providers/globalapi.dart';
+import 'package:ikwimpay/scr/directPaymentCard.dart';
 import 'package:ikwimpay/scr/verifyVehiche.dart';
 // import 'package:ikwimpay/scr/matchCard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,8 +34,9 @@ class _NFCScreenState extends State<NFCScreen> {
   String? _clientname;
   bool _cardinfo = false;
   bool _showCardinfo = false;
+  String? _cardType;
   String? _ndefRecordData; // New variable to store NDEF record data
-
+  String? _serialDetected;
   String _reverseHexString(String hex) {
     // Splits the hex string into two-character chunks and reverses the order.
     List<String> hexBytes = [];
@@ -149,6 +151,7 @@ class _NFCScreenState extends State<NFCScreen> {
       setState(() {
         _nfcData = serial;
         _nfcStatus = 'Card detected!';
+        _serialDetected = serialDecimal;
       });
 
       print('===== NFC TAG DETECTED =====');
@@ -290,9 +293,8 @@ class _NFCScreenState extends State<NFCScreen> {
       if (_ndefRecordData != null && _ndefRecordData!.isNotEmpty) {
         print('Trying card verification with NDEF data first');
         Map<String, dynamic> ndefRequestBody = {
-          'card_no': _ndefRecordData,       
-           "serial_number": _serialDecimalValue,
-
+          'card_no': _ndefRecordData,
+          "serial_number": _serialDetected,
         };
 
         final ndefResponse = await http.post(
@@ -322,7 +324,7 @@ class _NFCScreenState extends State<NFCScreen> {
       String cardnum = _serialDecimalValue.trim();
       Map<String, dynamic> serialRequestBody = {
         'card_no': cardnum,
-        "serial_number": _serialDecimalValue,
+        "serial_number": _serialDetected,
       };
 
       final serialResponse = await http.post(
@@ -431,7 +433,6 @@ class _NFCScreenState extends State<NFCScreen> {
       if ((responseData['status'] == 200) ||
           (responseData['status'] == '200')) {
         // Parse the response
-        final responseData = jsonDecode(response.body);
         print(responseData);
         setState(() {
           _nfcStatus = 'Card verified successfully!';
@@ -439,21 +440,35 @@ class _NFCScreenState extends State<NFCScreen> {
 
         final storage = FlutterSecureStorage();
         await storage.write(key: 'PIN', value: _pinController.text);
+        _cardType = responseData['data']['card_type'].toString();
+        print("_cardType%%%%%%% : $_cardType");
         // Show success message
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Card verified successfully!'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) => VerifyVehicleScreen(
-            cardId: _serialDecimalValue,
-            responseData: responseData,
-          ),
-        ));
 
-        // You can navigate to another screen here if needed
+        // Check the card_type and navigate to the appropriate screen
+        if (responseData['data']['card_type'] == 5) {
+          // Navigate to Direct Payment screen for card_type 5
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => DirectPaymentCardScreen(
+              cardId: _serialDecimalValue,
+              responseData: responseData,
+            ),
+          ));
+        } else {
+          // Navigate to regular Verify Vehicle screen for other card types
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => VerifyVehicleScreen(
+              cardId: _serialDecimalValue,
+              responseData: responseData,
+            ),
+          ));
+        }
       } else {
         // Handle error response
         setState(() {
@@ -471,7 +486,6 @@ class _NFCScreenState extends State<NFCScreen> {
       }
     } catch (e) {
       setState(() {
-        // _nfcStatus = 'Error during verification: ${e.toString()}';
         print('fffffffffffffffffff ${e.toString()}');
       });
 

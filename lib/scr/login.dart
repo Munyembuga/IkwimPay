@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false, // Removes the back button
         title: const Text(
-          'ITEC LTD  V 1.0',
+          'ITEC LTD  V 1.1',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
         ),
         actions: [
@@ -129,7 +129,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.characters,
                       style: const TextStyle(fontWeight: FontWeight.w300),
                       decoration: InputDecoration(
                         labelText: 'Phone',
@@ -200,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your password';
                         }
-                        if (value.length < 6) {
+                        if (value.length < 4) {
                           return 'Password must be at least 6 characters';
                         }
                         return null;

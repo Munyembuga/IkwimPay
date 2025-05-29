@@ -47,6 +47,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   bool _isNozzleVerified = false;
   bool _isVerificationInProgress = false;
   bool _isSubmitting = false;
+  bool _isDirectPayment = false; // Add this flag
 
   // Cache SharedPreferences instance
   SharedPreferences? _prefs;
@@ -91,14 +92,22 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           Uri.parse('${AppConfig.baseUrl}/api/transaction/command/post');
       final transID = widget.transactionData['transID']?.toString() ?? '';
 
-      // Ensure we have the base64 image data
-      if (_base64Image == null && _imagePath != null) {
-        try {
-          final bytes = await File(_imagePath!).readAsBytes();
-          _base64Image = base64Encode(bytes);
-        } catch (e) {
-          print('Error converting image to base64: $e');
-          // Handle error
+      // Skip image requirement for direct payment
+      String imageData = '';
+      if (_isDirectPayment) {
+        imageData = '404.png'; // No image needed for direct payment
+      } else {
+        // Ensure we have the base64 image data for regular transactions
+        if (_base64Image == null && _imagePath != null) {
+          try {
+            final bytes = await File(_imagePath!).readAsBytes();
+            imageData = base64Encode(bytes);
+          } catch (e) {
+            print('Error converting image to base64: $e');
+            imageData = '';
+          }
+        } else {
+          imageData = _base64Image ?? '';
         }
       }
 
@@ -106,8 +115,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
         'transID': transID,
         'amount': _formattedAmountController.text,
         'phone': _phoneController.text,
-        'display': _qrCodeResult?.toString() ?? '',
-        'image': _base64Image ?? '',
+        'display': _isDirectPayment ? '1' : (_qrCodeResult?.toString() ?? ''),
+        'image': imageData ?? '',
         'password': _passwordController.text,
       };
 
@@ -135,6 +144,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           );
         }
       } catch (e) {
+        print("Network error:&&&&&&&&&&&&&&&& $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Network error: $e')),
         );
@@ -284,11 +294,25 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     // Get plate number from SharedPreferences
     try {
       final plateNumber = _prefs!.getString('plate_number');
+      final plateFromTransaction =
+          widget.transactionData['plate_no'] ?? plateNumber ?? '';
+
+      // Check if this is a direct payment transaction - handle both cases with capitalization
+      _isDirectPayment = plateFromTransaction == "Direct Payment" ||
+          plateFromTransaction == "Direct payment";
+
+      if (_isDirectPayment) {
+        // No need for QR verification for direct payment
+        setState(() {
+          _isNozzleVerified = true;
+          // Set a default value for the image field to pass validation
+          _displayImageController.text = '404.png';
+        });
+      }
 
       if (mounted) {
         setState(() {
-          _plateNoController.text =
-              widget.transactionData['plate_no'] ?? plateNumber ?? '';
+          _plateNoController.text = plateFromTransaction;
         });
       }
     } catch (e) {
@@ -368,12 +392,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                         obscureTexts: false,
                         keyboardType: TextInputType.number,
                       ),
-                      _buildTextFieldDisplay(
-                        controller: _displayImageController,
-                        label: 'Image',
-                        hint: 'Image',
-                        keyboardType: TextInputType.url,
-                      ),
+                      if (!_isDirectPayment) // Only show the image field if not direct payment
+                        _buildTextFieldDisplay(
+                          controller: _displayImageController,
+                          label: 'Image',
+                          hint: 'Image',
+                          keyboardType: TextInputType.url,
+                        ),
                       const SizedBox(height: 24),
 
                       // Show verification status with optimized UI
@@ -383,7 +408,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                             color: Color(0xFFA50000),
                           ),
                         )
-                      else if (_isNozzleVerified)
+                      else if (_isNozzleVerified || _isDirectPayment)
                         _buildSubmitButton()
                       else
                         _buildScanButton(),

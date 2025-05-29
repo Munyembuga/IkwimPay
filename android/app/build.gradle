@@ -38,6 +38,9 @@ android {
         // targetSdk = flutter.targetSdkVersion
         // versionCode = flutter.versionCode
         // versionName = flutter.versionName
+
+        // Add this line to ensure multidex support
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -64,6 +67,9 @@ flutter {
 }
 
 dependencies {
+    // Add multidex support
+    implementation 'androidx.multidex:multidex:2.0.1'
+
     // Add these ML Kit text recognition dependencies
     implementation 'com.google.mlkit:text-recognition-chinese:16.0.0'
     implementation 'com.google.mlkit:text-recognition-devanagari:16.0.0'

@@ -46,12 +46,6 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ikwim Pay',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF870813),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF870813)),
-        // Add more theme settings as needed
-      ),
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
     );
