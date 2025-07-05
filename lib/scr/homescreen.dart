@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.orange,
+        selectedItemColor: Color(0xFFA50000), // Change to your desired color
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.white, // Background color of the bar
         elevation: 10, // Add shadow

@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false, // Removes the back button
         title: const Text(
-          'ITEC LTD  V 1.1',
+          'ITEC LTD  V 1.2',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
         ),
         actions: [

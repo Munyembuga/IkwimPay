@@ -107,6 +107,19 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
   Future<void> _scanLicensePlate() async {
     try {
       final cameras = await availableCameras();
+
+      // Check if any cameras are available
+      if (cameras.isEmpty) {
+        print('Error accessing camera: No cameras available on this device');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No cameras available on this device'),
+            backgroundColor: Color(0xFFA50000),
+          ),
+        );
+        return;
+      }
+
       final firstCamera = cameras.first;
 
       if (!mounted) return;
@@ -128,9 +141,12 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
 
       await _loadSavedPlateNumber();
     } catch (e) {
-      print(' Error accessing camera: $e');
+      print('Error accessing camera: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error accessing camera')),
+        SnackBar(
+          content: Text('Error accessing camera: ${e.toString()}'),
+          backgroundColor: const Color(0xFFA50000),
+        ),
       );
     }
   }

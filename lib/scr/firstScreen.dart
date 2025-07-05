@@ -118,7 +118,7 @@ class _FirstscreenState extends State<Firstscreen> {
                       ),
                       child: const Center(
                         child: Text(
-                          'Welcome to IKWIM Tab',
+                          'Welcome to IKWIM V 1.2',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,

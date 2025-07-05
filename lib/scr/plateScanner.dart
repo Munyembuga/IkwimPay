@@ -32,9 +32,9 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   late Future<void> _initializeControllerFuture;
   final TextRecognizer _textRecognizer = TextRecognizer();
   int? _userRole;
-  // Updated regex to match multiple license plate formats with more flexibility
+  // Updated regex to match multiple license plate formats including RE 007X
   final RegExp _plateRegex = RegExp(
-      r'([A-Z0-9]{3}\d{0,3}[A-Z0-9]{1})|([A-Z0-9]{2}\d{0,3}[A-Z0-9]{2})|([A-Z0-9]{2}\d{0,3}[A-Z0-9]{1})');
+      r'([A-Z]{2}\s?\d{3}[A-Z])|([A-Z]{3}\s?\d{3}[A-Z])|([A-Z]{2}\s?\d{3}[A-Z]{2})|([A-Z0-9]{3}\d{0,3}[A-Z0-9]{1})|([A-Z0-9]{2}\d{0,3}[A-Z0-9]{2})|([A-Z0-9]{2}\d{0,3}[A-Z0-9]{1})');
 
   // Enhanced character correction maps based on position and format knowledge
   final Map<String, String> _letterCorrections = {
@@ -102,26 +102,76 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   String _applyFormatCorrections(String text) {
     if (text.isEmpty) return text;
 
-    // Standardize text: remove spaces and make uppercase
-    text = text.replaceAll(' ', '').toUpperCase();
+    // Standardize text: handle spaces and make uppercase
+    text = text.replaceAll(RegExp(r'\s+'), ' ').trim().toUpperCase();
+    String noSpaceText = text.replaceAll(' ', '');
 
-    // Common formats:
-    // 1. ABC123D - 3 letters + 3 numbers + 1 letter
-    // 2. AB123CD - 2 letters + 3 numbers + 2 letters
-    // 3. AB123C - 2 letters + 3 numbers + 1 letter
-
-    // Try to determine format
+    _potentialMatchesWithScore.clear();
     String correctedText = '';
     double confidence = 0.0;
 
-    // Format 1: ABC123D
-    if (text.length == 7 &&
-        RegExp(r'^[A-Z0-9]{3}[A-Z0-9]{3}[A-Z0-9]{1}$').hasMatch(text)) {
+    // Format 1: "RE 007X" - 2 letters + space + 3 digits + 1 letter
+    if ((text.length >= 6 && text.length <= 8) || (noSpaceText.length == 6)) {
+      String workingText = noSpaceText;
+      if (workingText.length == 6 &&
+          RegExp(r'^[A-Z0-9]{2}[0-9A-Z]{3}[A-Z0-9]{1}$')
+              .hasMatch(workingText)) {
+        String format1Text = '';
+        double format1Confidence = 0.9; // High confidence for RE 007X format
+
+        for (int i = 0; i < workingText.length; i++) {
+          String char = workingText[i];
+
+          if (i < 2) {
+            // First 2 should be letters (RE)
+            if (RegExp(r'[0-9]').hasMatch(char)) {
+              char = _letterCorrections[char] ?? char;
+              format1Confidence -= 0.1;
+            } else {
+              format1Confidence += 0.05;
+            }
+          } else if (i >= 2 && i < 5) {
+            // Middle 3 should be numbers (007)
+            if (RegExp(r'[A-Z]').hasMatch(char)) {
+              char = _numberCorrections[char] ?? char;
+              format1Confidence -= 0.1;
+            } else {
+              format1Confidence += 0.05;
+            }
+          } else {
+            // Last one should be letter (X)
+            if (RegExp(r'[0-9]').hasMatch(char)) {
+              char = _letterCorrections[char] ?? char;
+              format1Confidence -= 0.1;
+            } else {
+              format1Confidence += 0.05;
+            }
+          }
+
+          format1Text += char; // No space added here
+        }
+
+        _potentialMatchesWithScore.add({
+          'text': format1Text,
+          'confidence': format1Confidence,
+          'format': 'RE007X'
+        });
+
+        if (format1Confidence > confidence) {
+          correctedText = format1Text;
+          confidence = format1Confidence;
+        }
+      }
+    }
+
+    // Format 2: ABC123D - 3 letters + 3 numbers + 1 letter
+    if (noSpaceText.length == 7 &&
+        RegExp(r'^[A-Z0-9]{3}[A-Z0-9]{3}[A-Z0-9]{1}$').hasMatch(noSpaceText)) {
       correctedText = '';
       confidence = 0.7; // Base confidence for matching length and pattern
 
-      for (int i = 0; i < text.length; i++) {
-        String char = text[i];
+      for (int i = 0; i < noSpaceText.length; i++) {
+        String char = noSpaceText[i];
         // Apply position-specific corrections first
         if (_positionSpecificCorrections.containsKey(i) &&
             _positionSpecificCorrections[i]!.containsKey(char)) {
@@ -166,17 +216,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       });
     }
 
-    // Do similar processing for Format 2: AB123CD
-    // ...similar pattern for other formats...
-
-    // For demonstration, I'll include the code for Format 2
-    if (text.length == 7 &&
-        RegExp(r'^[A-Z0-9]{2}[A-Z0-9]{3}[A-Z0-9]{2}$').hasMatch(text)) {
+    // Format 3: AB123CD - 2 letters + 3 numbers + 2 letters
+    if (noSpaceText.length == 7 &&
+        RegExp(r'^[A-Z0-9]{2}[A-Z0-9]{3}[A-Z0-9]{2}$').hasMatch(noSpaceText)) {
       String format2Text = '';
       double format2Confidence = 0.7;
 
-      for (int i = 0; i < text.length; i++) {
-        String char = text[i];
+      for (int i = 0; i < noSpaceText.length; i++) {
+        String char = noSpaceText[i];
         // Apply position-specific corrections
         if (_positionSpecificCorrections.containsKey(i) &&
             _positionSpecificCorrections[i]!.containsKey(char)) {
@@ -217,8 +264,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       }
     }
 
-    // Format 3: AB123C
-    // ...similar implementation...
+    // Select the best match from all potential matches
+    if (_potentialMatchesWithScore.isNotEmpty) {
+      _potentialMatchesWithScore
+          .sort((a, b) => b['confidence'].compareTo(a['confidence']));
+      correctedText = _potentialMatchesWithScore.first['text'];
+      confidence = _potentialMatchesWithScore.first['confidence'];
+    }
 
     _plateConfidence = confidence;
     return correctedText;
@@ -291,10 +343,41 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 
       // Print detailed breakdown of recognized text
       print("\n--------- TEXT BLOCKS BREAKDOWN ---------");
+
+      // Special handling for two-line plates like "RE 007X"
+      List<String> allLines = [];
+
+      for (TextBlock block in recognizedText.blocks) {
+        for (TextLine line in block.lines) {
+          String lineText = line.text.trim().toUpperCase();
+          allLines.add(lineText);
+          print("Text line: $lineText");
+        }
+      }
+
+      // Try to combine lines for two-line plate format (RE on top, 007X on bottom)
+      for (int i = 0; i < allLines.length - 1; i++) {
+        String line1 = allLines[i].replaceAll(' ', '');
+        String line2 = allLines[i + 1].replaceAll(' ', '');
+
+        // Check if first line has 2 letters and second line has 3 digits + 1 letter
+        if (RegExp(r'^[A-Z]{2}$').hasMatch(line1) &&
+            RegExp(r'^[0-9]{3}[A-Z]$').hasMatch(line2)) {
+          String combinedText = line1 + line2; // RE007X
+          print("Combined two-line plate: $combinedText");
+          potentialPlates.add(combinedText);
+          break;
+        }
+      }
+
+      // Also process individual lines and full text
+      String fullTextNoSpaces =
+          recognizedText.text.replaceAll(RegExp(r'\s+'), '').toUpperCase();
+      potentialPlates.add(fullTextNoSpaces);
+
       for (TextBlock block in recognizedText.blocks) {
         for (TextLine line in block.lines) {
           final text = line.text.replaceAll(' ', '').toUpperCase();
-          print("Text line: $text");
 
           // Pre-processing: Try applying corrections before regex matching
           final correctedText = _applyFormatCorrections(text);
@@ -306,33 +389,31 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           if (text != correctedText) {
             potentialPlates.add(correctedText);
           }
+        }
+      }
 
-          // Check for matches in both original and corrected text
-          for (String plateText in potentialPlates) {
-            final matches = _plateRegex.allMatches(plateText);
-            for (Match match in matches) {
-              String candidate = match.group(0) ?? '';
-              if (candidate.isNotEmpty) {
-                // Apply format correction one more time to ensure consistency
-                detectedPlate = _applyFormatCorrections(candidate);
-                print(
-                    "Detected plate: $detectedPlate (confidence: ${_plateConfidence.toStringAsFixed(2)})");
+      // Check for matches in all potential plates
+      for (String plateText in potentialPlates) {
+        final matches = _plateRegex.allMatches(plateText);
+        for (Match match in matches) {
+          String candidate = match.group(0) ?? '';
+          if (candidate.isNotEmpty) {
+            // Apply format correction and remove all spaces
+            detectedPlate =
+                _applyFormatCorrections(candidate).replaceAll(' ', '');
+            print(
+                "Detected plate: $detectedPlate (confidence: ${_plateConfidence.toStringAsFixed(2)})");
 
-                // Debug information about all potential matches
-                print("\nAll potential matches:");
-                _potentialMatchesWithScore
-                    .sort((a, b) => b['confidence'].compareTo(a['confidence']));
-                for (var match in _potentialMatchesWithScore) {
-                  print(
-                      "${match['text']} - Format: ${match['format']} - Confidence: ${match['confidence'].toStringAsFixed(2)}");
-                }
-                break;
-              }
+            // Debug information about all potential matches
+            print("\nAll potential matches:");
+            _potentialMatchesWithScore
+                .sort((a, b) => b['confidence'].compareTo(a['confidence']));
+            for (var match in _potentialMatchesWithScore) {
+              print(
+                  "${match['text']} - Format: ${match['format']} - Confidence: ${match['confidence'].toStringAsFixed(2)}");
             }
-            if (detectedPlate.isNotEmpty) break;
+            break;
           }
-
-          if (detectedPlate.isNotEmpty) break;
         }
         if (detectedPlate.isNotEmpty) break;
       }
@@ -550,18 +631,21 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         _isProcessing = true;
       });
 
+      // Remove all spaces from plate number before saving
+      String cleanPlateNumber = plateNumber.replaceAll(' ', '');
+
       // Convert image to base64
       final String base64Image = await _convertImageToBase64(imagePath);
 
       // Save to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('plateNumber', plateNumber);
+      await prefs.setString('plateNumber', cleanPlateNumber);
       await prefs.setString('base64Image', base64Image);
 
       // Create updated transaction data
       final updatedData =
           Map<String, dynamic>.from(widget.transactionData ?? {});
-      updatedData['plate_no'] = plateNumber;
+      updatedData['plate_no'] = cleanPlateNumber;
       updatedData['imagePath'] = imagePath;
       updatedData['base64Image'] = base64Image;
 

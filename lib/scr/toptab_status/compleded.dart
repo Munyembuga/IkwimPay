@@ -16,6 +16,7 @@ import 'package:sunmi_printer_plus/core/enums/enums.dart';
 import 'package:sunmi_printer_plus/core/styles/sunmi_text_style.dart';
 import 'package:sunmi_printer_plus/core/sunmi/sunmi_printer.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 
 class CompletedTab extends StatefulWidget {
   const CompletedTab({Key? key}) : super(key: key);
@@ -29,6 +30,10 @@ class _CompletedTabState extends State<CompletedTab> {
   bool isLoading = true;
   String errorMessage = '';
 
+  // Stream controller and timer for real-time updates
+  StreamController<List<Map<String, dynamic>>>? _transactionStreamController;
+  Timer? _refreshTimer;
+
   // Bluetooth printer properties
   BlueThermalPrinter bluetooth = BlueThermalPrinter.instance;
   List<BluetoothDevice> _devices = [];
@@ -40,8 +45,32 @@ class _CompletedTabState extends State<CompletedTab> {
   @override
   void initState() {
     super.initState();
-    fetchCompletedTransactions();
+    _initializeStream();
     _checkSunmiPrinterAvailability();
+  }
+
+  @override
+  void dispose() {
+    _transactionStreamController?.close();
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  // Initialize the stream and start periodic updates
+  void _initializeStream() {
+    _transactionStreamController =
+        StreamController<List<Map<String, dynamic>>>.broadcast();
+    _startPeriodicRefresh();
+    fetchCompletedTransactions(); // Initial fetch
+  }
+
+  // Start periodic refresh every 1 seconds
+  void _startPeriodicRefresh() {
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      if (mounted) {
+        fetchCompletedTransactions();
+      }
+    });
   }
 
   // Check if Sunmi printer is available
@@ -887,18 +916,20 @@ class _CompletedTabState extends State<CompletedTab> {
   }
 
   Future<void> fetchCompletedTransactions() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = '';
-    });
+    if (!mounted) return;
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
+
     if (user == null) {
       setState(() {
         errorMessage = 'User not logged in. Please log in to verify tickets.';
+        isLoading = false;
       });
+      _transactionStreamController?.addError('User not logged in');
       return;
     }
+
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/api/transaction/command/get'),
@@ -920,67 +951,105 @@ class _CompletedTabState extends State<CompletedTab> {
         print("Transaction data response: ${responseData}");
 
         if (responseData['success'] == 200 && responseData['data'] != null) {
-          // Show all transactions without filtering by age
           List<Map<String, dynamic>> allTransactions =
               List<Map<String, dynamic>>.from(responseData['data']);
 
-          setState(() {
-            pendingTransactions = allTransactions;
-            isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              pendingTransactions = allTransactions;
+              isLoading = false;
+              errorMessage = '';
+            });
+          }
+
+          // Add data to stream
+          _transactionStreamController?.add(allTransactions);
         } else {
+          if (mounted) {
+            setState(() {
+              errorMessage = 'No Completed transactions found';
+              isLoading = false;
+            });
+          }
+          _transactionStreamController?.add([]);
+        }
+      } else {
+        if (mounted) {
           setState(() {
-            errorMessage = 'No Completed transactions found';
+            errorMessage = 'Failed to load data: ${response.statusCode}';
             isLoading = false;
           });
         }
-      } else {
+        _transactionStreamController
+            ?.addError('Failed to load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          errorMessage = 'Failed to load data: ${response.statusCode}';
+          errorMessage = 'Error: ${e.toString()}';
           isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Error: ${e.toString()}';
-        isLoading = false;
-      });
+      _transactionStreamController?.addError('Error: ${e.toString()}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (errorMessage.isNotEmpty) {
-      return Center(
-          child: Text(errorMessage,
-              style: const TextStyle(
-                color: const Color(0xFFA50000),
-              )));
-    }
-
     return Container(
       padding: const EdgeInsets.all(8),
-      child: pendingTransactions.isEmpty
-          ? const Center(
+      child: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _transactionStreamController?.stream,
+        initialData: pendingTransactions,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Color(0xFFA50000)),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: fetchCompletedTransactions,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final transactions = snapshot.data ?? [];
+
+          if (transactions.isEmpty && !isLoading) {
+            return const Center(
               child: Text(
                 'No Completed transactions',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
-            )
-          : RefreshIndicator(
-              onRefresh: fetchCompletedTransactions,
-              child: ListView.builder(
-                itemCount: pendingTransactions.length,
-                itemBuilder: (context, index) {
-                  final item = pendingTransactions[index];
-                  return _buildStatusCard(item, context);
-                },
-              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: fetchCompletedTransactions,
+            child: ListView.builder(
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                final item = transactions[index];
+                return _buildStatusCard(item, context);
+              },
             ),
+          );
+        },
+      ),
     );
   }
 

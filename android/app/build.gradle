@@ -5,14 +5,10 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file('key.properties')
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
+
 
 android {
-    namespace = "com.itec.ikwimpay"
+    namespace = "com.itec.ikwimpays"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,12 +18,12 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.itec.ikwimpay"
+        applicationId = "com.itec.ikwimpays"
         minSdkVersion = 26  // Explicitly set this to 26 instead of using flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
@@ -43,21 +39,14 @@ android {
         multiDexEnabled true
     }
 
-    signingConfigs {
-        release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-        }
-    }
+    
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
-            minifyEnabled true
-            shrinkResources false  // Disable resource shrinking
-            // resConfigs "en"  // You can specify the default resource language
+            signingConfig = signingConfigs.debug
+            // minifyEnabled true
+            // shrinkResources false  // Disable resource shrinking
+            // // resConfigs "en"  // You can specify the default resource language
         }
     }
 }
