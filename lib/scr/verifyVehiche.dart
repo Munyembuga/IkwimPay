@@ -360,7 +360,7 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
       );
       print('&&&&&&&&&&&&&&&&&&&&&HHHHHHHHHHHHHHH  $requestBody');
       Map<String, dynamic> responseData = jsonDecode(response.body);
-
+      print('&&&&&&&&&&&&&&&&&&&&&HHHHHHHHHHHHHHH  $responseData');
       if (responseData['status'] == 200) {
         Map<String, dynamic> verificationResult = {
           'card_no': responseData['data']['card_no'] ?? 'N/A',
@@ -429,44 +429,71 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
     });
 
     try {
+      // Check NFC availability
+      NFCAvailability availability = await FlutterNfcKit.nfcAvailability;
+      if (availability != NFCAvailability.available) {
+        throw Exception('NFC not available on this device');
+      }
+
       var tag = await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 20),
         iosAlertMessage: 'Hold your device near the nozzle NFC tag',
       );
+
+      if (tag.id.isEmpty) {
+        throw Exception('No NFC tag data received');
+      }
+
       String serial = tag.id;
       String reversedSerial = _reverseHexString(serial);
       int? serialInt = int.tryParse(reversedSerial, radix: 16);
-      String serialDecimal =
-          serialInt != null ? serialInt.toString() : "Conversion failed";
 
+      if (serialInt == null) {
+        throw Exception('Failed to parse NFC tag data');
+      }
+
+      String serialDecimal = serialInt.toString();
       _nozzle_tag = serialDecimal;
 
-      // Call the verification method for the nozzle
       await _verifyCard();
 
       setState(() {
-        // _nfcStatus = 'Nozzle Detected Successfully!';
+        _nfcStatus = 'Nozzle detected successfully!';
       });
-      print('&&&&&&&&&&&&&&&&&&&&& ${_nozzle_tag}');
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text('Nozzle Detected Successfully'),
-      //     backgroundColor: Colors.green,
-      //   ),
-      // );
     } catch (e) {
+      print('Error scanning nozzle: ${e.toString()}');
+
       setState(() {
-        print('Error scanning nozzle: ${e.toString()}');
-        _nfcStatus = 'Try Gain';
+        _nfcStatus = 'Nozzle scanning failed';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Polling nozzole timeout'),
-          backgroundColor: const Color(0xFFA50000),
-        ),
-      );
+
+      String errorMessage = 'NFC scanning failed';
+      if (e.toString().contains('timeout')) {
+        errorMessage = ' Scanning Nozzle timeout - please try again';
+      }
+
+      // else if (e.toString().contains('cancelled')) {
+      //   errorMessage = 'NFC scanning cancelled';
+      // }
+      else if (e.toString().contains('not available')) {
+        errorMessage = 'NFC not available on this device';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: const Color(0xFFA50000),
+          ),
+        );
+      }
     } finally {
-      await FlutterNfcKit.finish();
+      try {
+        await FlutterNfcKit.finish();
+      } catch (e) {
+        print('Error finishing NFC: $e');
+      }
+
       if (mounted) {
         setState(() {
           _isNfcReading = false;
@@ -474,6 +501,61 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
       }
     }
   }
+  // Future<void> _startNfcNozzleScanning() async {
+  //   if (_isNfcReading) return;
+
+  //   setState(() {
+  //     _isNfcReading = true;
+  //     _isReading = true;
+  //     _nfcStatus = 'Scanning for nozzle NFC tag...';
+  //   });
+
+  //   try {
+  //     var tag = await FlutterNfcKit.poll(
+  //       timeout: const Duration(seconds: 20),
+  //       iosAlertMessage: 'Hold your device near the nozzle NFC tag',
+  //     );
+  //     String serial = tag.id;
+  //     String reversedSerial = _reverseHexString(serial);
+  //     int? serialInt = int.tryParse(reversedSerial, radix: 16);
+  //     String serialDecimal =
+  //         serialInt != null ? serialInt.toString() : "Conversion failed";
+
+  //     _nozzle_tag = serialDecimal;
+
+  //     // Call the verification method for the nozzle
+  //     await _verifyCard();
+
+  //     setState(() {
+  //       // _nfcStatus = 'Nozzle Detected Successfully!';
+  //     });
+  //     print('&&&&&&&&&&&&&&&&&&&&& ${_nozzle_tag}');
+  //     // ScaffoldMessenger.of(context).showSnackBar(
+  //     //   SnackBar(
+  //     //     content: Text('Nozzle Detected Successfully'),
+  //     //     backgroundColor: Colors.green,
+  //     //   ),
+  //     // );
+  //   } catch (e) {
+  //     setState(() {
+  //       print('Error scanning nozzle: ${e.toString()}');
+  //       _nfcStatus = 'Try Gain';
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Polling nozzole timeout'),
+  //         backgroundColor: const Color(0xFFA50000),
+  //       ),
+  //     );
+  //   } finally {
+  //     await FlutterNfcKit.finish();
+  //     if (mounted) {
+  //       setState(() {
+  //         _isNfcReading = false;
+  //       });
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -538,7 +620,7 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
                 controller: _plateNumberController,
                 keyboardType: TextInputType.text,
                 textCapitalization: TextCapitalization.characters,
-                readOnly: true,
+                // readOnly: false,
                 // readOnly: _userRole ==
                 //     6, // Read-only if userRole is 6, otherwise editable
                 enabled: !_isVehicleVerified,

@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:ikwimpay/providers/auth_provider.dart';
 import 'package:ikwimpay/providers/globalapi.dart';
 import 'package:ikwimpay/scr/cardViewPump.dart';
-import 'package:ikwimpay/scr/pumpIndexingTransaction.dart';
 import 'package:ikwimpay/scr/userProfile';
 import 'package:ikwimpay/scr/paymentScreen.dart';
-import 'package:ikwimpay/scr/pumpIndexing.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
@@ -169,7 +167,6 @@ class _FirstscreenState extends State<Firstscreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header Section
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
@@ -183,11 +180,11 @@ class _FirstscreenState extends State<Firstscreen> {
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.admin_panel_settings,
+                              Icon(Icons.payment,
                                   color: Colors.white, size: 20),
                               SizedBox(width: 8),
                               Text(
-                                "Administrator Actions",
+                                "Payment Options",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -198,26 +195,28 @@ class _FirstscreenState extends State<Firstscreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        // Payment Options Section
-                        const Text(
-                          "Payment Management",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF870813),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
                         Row(
                           children: [
                             Expanded(
                               child: _buildActionCard(
                                 'Card Payment',
-                                Icons.credit_card,
+                                Icons.money,
                                 Colors.green,
                                 () {
-                                  widget.onTabChange?.call(1);
+                                  // Handle card payment
+                                  print('Card payment selected');
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildActionCard(
+                                'Pump Indexing',
+                                Icons.money,
+                                Colors.green,
+                                () {
+                                  // Handle pump indexing
+                                  print('Pump indexing selected');
                                 },
                               ),
                             ),
@@ -228,123 +227,36 @@ class _FirstscreenState extends State<Firstscreen> {
                                 Icons.phone_android,
                                 Colors.blue,
                                 () {
-                                  widget.onTabChange?.call(2);
+                                  // Handle Bon payment
+                                  print('Bon payment selected');
                                 },
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 24),
-
-                        // Pump Management Section
-                        const Text(
-                          "Pump Management",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF870813),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 20),
                         Row(
                           children: [
                             Expanded(
                               child: _buildActionCard(
-                                'Pump Indexing',
-                                Icons.local_gas_station,
-                                Colors.orange,
+                                'Cash Payment',
+                                Icons.money,
+                                Colors.green,
                                 () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const PumpIndexingScreen(),
-                                    ),
-                                  );
+                                  // Handle cash payment
+                                  print('Cash payment selected');
                                 },
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildActionCard(
-                                'Pump Transactions',
-                                Icons.receipt,
-                                Colors.purple,
+                                'Mobile Money',
+                                Icons.phone_android,
+                                Colors.blue,
                                 () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          PendingIndexingTransactionsScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Additional Admin Actions
-                        const Text(
-                          "System Management",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF870813),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildActionCard(
-                                'Reports',
-                                Icons.analytics,
-                                Colors.teal,
-                                () {
-                                  _showReportsDialog();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildActionCard(
-                                'User Management',
-                                Icons.people,
-                                Colors.indigo,
-                                () {
-                                  _showUserManagementDialog();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildActionCard(
-                                'Settings',
-                                Icons.settings,
-                                Colors.grey,
-                                () {
-                                  _showSettingsDialog();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildActionCard(
-                                'Audit Log',
-                                Icons.history,
-                                Colors.brown,
-                                () {
-                                  _showAuditLogDialog();
+                                  // Handle mobile money
+                                  print('Mobile money selected');
                                 },
                               ),
                             ),
@@ -610,127 +522,43 @@ class _FirstscreenState extends State<Firstscreen> {
       String title, IconData icon, Color color, VoidCallback? onTap) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
+        onTap: () {
+          if (title == 'Card Payment') {
+            // Navigate to card tab in bottom navigation
+            widget.onTabChange?.call(1);
+          } else if (title == 'Bon Payment') {
+            // Navigate to wallet tab in bottom navigation
+            widget.onTabChange?.call(2);
+          } else {
+            // Navigate to payment screen for other payment types
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaymentScreen(paymentType: title),
+              ),
+            );
+          }
+        },
+        child: Padding(
           padding: const EdgeInsets.all(20.0),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              colors: [
-                color.withOpacity(0.1),
-                color.withOpacity(0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Icon(icon, size: 32, color: color),
-              ),
-              const SizedBox(height: 12),
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 8),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: color.withOpacity(0.8),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  // Dialog methods for additional admin actions
-  void _showReportsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Reports'),
-          content:
-              const Text('Reports functionality will be implemented here.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showUserManagementDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('User Management'),
-          content: const Text(
-              'User management functionality will be implemented here.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Settings'),
-          content:
-              const Text('Settings functionality will be implemented here.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showAuditLogDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Audit Log'),
-          content:
-              const Text('Audit log functionality will be implemented here.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
     );
   }
 }

@@ -373,7 +373,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                         label: 'Phone number',
                         hint: 'Enter Phone numbe',
                         obscureTexts: false,
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.text,
                       ),
 
                       _buildTextField(

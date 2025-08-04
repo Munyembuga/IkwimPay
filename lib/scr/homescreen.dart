@@ -27,6 +27,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _selectedIndex = widget.initialIndex; // Set the initial tab
   }
 
+  // Add method to change tab programmatically
+  void changeTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -79,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 0:
-        return const Firstscreen();
+        return Firstscreen(onTabChange: changeTab);
 
       case 1:
         return const NFCScreen();
@@ -88,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 3:
         return const StatusTab();
       default:
-        return const Firstscreen();
+        return Firstscreen(onTabChange: changeTab);
     }
   }
 }
