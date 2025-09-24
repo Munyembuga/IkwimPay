@@ -117,6 +117,10 @@ class _InProgressTabState extends State<InProgressTab> {
       'plate_no': item['plate_no'] ?? 'Unknown',
       'createdAt': item['createdAt'] ?? 'Unknown',
       'product': item['product'] ?? 'Unknown',
+      'formatted_amount': item['formatted_amount'] ?? '0', // Add this
+      'balance': item['balance'] ?? 0, // Add this
+      'card_type': item['card_type'] ?? 0, // Add this
+      'card_type_name': item['card_type_name'] ?? '', // Add this
     };
 
     final int transID = item['transID'] ?? 0;

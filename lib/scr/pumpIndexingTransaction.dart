@@ -55,7 +55,7 @@ class _PendingIndexingTransactionsScreenState
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final siteId = authProvider.user?.siteId ?? 0;
-
+    final userId = authProvider.user?.userId ?? 0;
     setState(() {
       isLoadingPending = true;
     });
@@ -63,7 +63,8 @@ class _PendingIndexingTransactionsScreenState
     try {
       final data = await PumpService.getPendingIndexTransactions(
         siteId: siteId,
-        shiftId: selectedShift,
+        userId: userId,
+        // shiftId: selectedShift,
       );
 
       setState(() {
@@ -80,7 +81,7 @@ class _PendingIndexingTransactionsScreenState
 
   Future<void> approveTransaction(int transactionId) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = 2235;
+    final userId = authProvider.user?.userId ?? 0;
     final siteID = authProvider.user?.siteId ?? 0;
 
     try {
@@ -616,7 +617,10 @@ class _PendingIndexingTransactionsScreenState
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = authProvider.user?.userId ?? 0;
     final transactionAccId = transaction['acc_id'] ?? 0;
+    final transactionApprovedBy = transaction['approvedBy'] ?? 0;
+
     final canEdit = currentUserId == transactionAccId;
+    final canApprove = currentUserId == transactionApprovedBy;
 
     final nozzleName = transaction['nozzle_name'] ?? 'Unknown Nozzle';
     final pumpName = transaction['pomp_name'] ?? 'Unknown Pump';
@@ -736,21 +740,23 @@ class _PendingIndexingTransactionsScreenState
                   ),
                   const SizedBox(width: 12),
                 ],
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => approveTransaction(transactionId),
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text('Approve'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                if (canApprove) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => approveTransaction(transactionId),
+                      icon: const Icon(Icons.check, size: 18),
+                      label: const Text('Approve'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ],

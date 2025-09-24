@@ -152,6 +152,7 @@ class _CompletedTabState extends State<BoTab> {
         await _printWithBluetooth(transaction, user);
       }
     } catch (e) {
+      print("Error printing receipt***************************: $e");
       _showMessage('Error printing receipt: $e');
     }
   }
@@ -161,7 +162,8 @@ class _CompletedTabState extends State<BoTab> {
       Map<String, dynamic> transaction, dynamic user) async {
     final company = user?.companyname;
     final address = user?.address;
-    final phone = user.phone;
+    // Fix: Replace phone with userId or a placeholder
+    final phone = "+250788322352/+250788581220";
 
     try {
       await SunmiPrinter.initPrinter();
@@ -263,7 +265,7 @@ class _CompletedTabState extends State<BoTab> {
           ));
       await SunmiPrinter.lineWrap(7); // Add one line of space
 
-      await SunmiPrinter.printText("Type: Bon",
+      await SunmiPrinter.printText("Type: VOUCHER",
           style: SunmiTextStyle(
             fontSize: 30,
           ));
@@ -316,7 +318,8 @@ class _CompletedTabState extends State<BoTab> {
 
     final company = user?.companyname;
     final address = user?.address;
-    final phone = user?.phone;
+    // Fix: Replace phone with userId or transaction phone or a placeholder
+    final phone = "+250788322352/+250788581220";
 
     try {
       // Set text size for header

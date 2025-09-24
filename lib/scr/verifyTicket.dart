@@ -484,6 +484,13 @@ class _VerifyticketState extends State<Verifyticket> {
       );
       _totalPrice = double.parse(_paymentController.text);
 
+      // Get the product price from the selected product
+      final productPrice = selectedProduct['price'] != null
+          ? double.tryParse(selectedProduct['price'].toString()) ?? 0.0
+          : 0.0;
+
+      print('Selected product price: $productPrice');
+
       final customerId = widget.verificationResult?['client']?['id'] ?? '0';
       print('UUUUUUUUUUUUUUUUUUU  $customerId');
       // Prepare request body for val_trans
@@ -500,6 +507,7 @@ class _VerifyticketState extends State<Verifyticket> {
         'plate_no': _plateNumberController.text,
         'ref': getInvoiceId(),
         'product': _productName,
+        'price': productPrice, // Added product price to the request
       };
 
       print("val_trans request body: $valTransBody");
@@ -784,7 +792,7 @@ class _VerifyticketState extends State<Verifyticket> {
                       // Driver Name
                       _buildTextFieldPlateNumber(
                         controller: _plateNumberController,
-                        readOnly: true,
+                        readOnly: false,
                         hintText: 'RAD670D',
                         validator: (value) {
                           if (value == null || value.isEmpty) {

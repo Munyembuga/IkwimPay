@@ -620,7 +620,7 @@ class _VerifyVehicleScreenState extends State<VerifyVehicleScreen> {
                 controller: _plateNumberController,
                 keyboardType: TextInputType.text,
                 textCapitalization: TextCapitalization.characters,
-                // readOnly: false,
+                readOnly: true,
                 // readOnly: _userRole ==
                 //     6, // Read-only if userRole is 6, otherwise editable
                 enabled: !_isVehicleVerified,

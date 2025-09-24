@@ -103,7 +103,7 @@ class _FirstscreenState extends State<Firstscreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: const Text(
-                    'Welcome to IKWIM',
+                    'Welcome to IKWIM V 1.5',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -237,119 +237,119 @@ class _FirstscreenState extends State<Firstscreen> {
 
                         const SizedBox(height: 24),
 
-                        // Pump Management Section
-                        const Text(
-                          "Pump Management",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF870813),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildActionCard(
-                                'Pump Indexing',
-                                Icons.local_gas_station,
-                                Colors.orange,
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const PumpIndexingScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildActionCard(
-                                'Pump Transactions',
-                                Icons.receipt,
-                                Colors.purple,
-                                () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          PendingIndexingTransactionsScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        // // Pump Management Section
+                        // const Text(
+                        //   "Pump Management",
+                        //   style: TextStyle(
+                        //     fontSize: 16,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Color(0xFF870813),
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 12),
+                        // Row(
+                        //   children: [
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'Pump Indexing',
+                        //         Icons.local_gas_station,
+                        //         Colors.orange,
+                        //         () {
+                        //           Navigator.push(
+                        //             context,
+                        //             MaterialPageRoute(
+                        //               builder: (context) =>
+                        //                   const PumpIndexingScreen(),
+                        //             ),
+                        //           );
+                        //         },
+                        //       ),
+                        //     ),
+                        //     const SizedBox(width: 16),
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'Pump Transactions',
+                        //         Icons.receipt,
+                        //         Colors.purple,
+                        //         () {
+                        //           Navigator.push(
+                        //             context,
+                        //             MaterialPageRoute(
+                        //               builder: (context) =>
+                        //                   PendingIndexingTransactionsScreen(),
+                        //             ),
+                        //           );
+                        //         },
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
 
                         const SizedBox(height: 24),
 
-                        // Additional Admin Actions
-                        const Text(
-                          "System Management",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF870813),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildActionCard(
-                                'Reports',
-                                Icons.analytics,
-                                Colors.teal,
-                                () {
-                                  _showReportsDialog();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildActionCard(
-                                'User Management',
-                                Icons.people,
-                                Colors.indigo,
-                                () {
-                                  _showUserManagementDialog();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        // // Additional Admin Actions
+                        // const Text(
+                        //   "System Management",
+                        //   style: TextStyle(
+                        //     fontSize: 16,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Color(0xFF870813),
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 12),
+                        // Row(
+                        //   children: [
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'Reports',
+                        //         Icons.analytics,
+                        //         Colors.teal,
+                        //         () {
+                        //           _showReportsDialog();
+                        //         },
+                        //       ),
+                        //     ),
+                        //     const SizedBox(width: 16),
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'User Management',
+                        //         Icons.people,
+                        //         Colors.indigo,
+                        //         () {
+                        //           _showUserManagementDialog();
+                        //         },
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
 
-                        const SizedBox(height: 16),
+                        // const SizedBox(height: 16),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildActionCard(
-                                'Settings',
-                                Icons.settings,
-                                Colors.grey,
-                                () {
-                                  _showSettingsDialog();
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildActionCard(
-                                'Audit Log',
-                                Icons.history,
-                                Colors.brown,
-                                () {
-                                  _showAuditLogDialog();
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Row(
+                        //   children: [
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'Settings',
+                        //         Icons.settings,
+                        //         Colors.grey,
+                        //         () {
+                        //           _showSettingsDialog();
+                        //         },
+                        //       ),
+                        //     ),
+                        //     const SizedBox(width: 16),
+                        //     Expanded(
+                        //       child: _buildActionCard(
+                        //         'Audit Log',
+                        //         Icons.history,
+                        //         Colors.brown,
+                        //         () {
+                        //           _showAuditLogDialog();
+                        //         },
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                       ],
                     ),
                   )

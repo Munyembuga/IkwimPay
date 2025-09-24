@@ -33,7 +33,7 @@ class PumpService {
         Uri.parse('https://mis.ikwim.com/api/pump/command/shift_info'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'user_id': 2236,
+          'user_id': userId, // Use the actual userId instead of hardcoded 2236
           'site_id': siteId,
           'sitshift_id': shiftId,
         }),
@@ -140,12 +140,12 @@ class PumpService {
 
   static Future<Map<String, dynamic>> getPendingIndexTransactions({
     required int siteId,
-    int? shiftId,
+    required int? userId,
   }) async {
     try {
       final requestBody = {
         'site_id': siteId,
-        'user_id': 2235,
+        'user_id': userId,
         // if (shiftId != null) 'shift_id': shiftId,
       };
 
@@ -240,7 +240,7 @@ class PumpService {
     try {
       final requestBody = {
         'pumpIndex_id': transactionId,
-        'acc_id': 2250,
+        'acc_id': accId,
         'site_id': siteId,
         'end_index': endIndex,
       };

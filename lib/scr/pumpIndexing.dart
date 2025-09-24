@@ -29,6 +29,7 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
   int? selectedShift;
   final TextEditingController currentIndexController = TextEditingController();
   Map<String, dynamic>? selectedNozzleData;
+  double? nozzleSellingPrice; // Add this variable to store selling price
 
   @override
   void initState() {
@@ -109,6 +110,7 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
     setState(() {
       isLoadingNozzles = true;
       previousIndex = null;
+      nozzleSellingPrice = null; // Reset selling price
     });
 
     try {
@@ -119,12 +121,18 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
 
       setState(() {
         previousIndex = data['data']['end_index']?.toString() ?? 'N/A';
+        // Store the selling price from the response
+        nozzleSellingPrice =
+            data['data']['selling_price']?.toDouble() ?? 1500.0;
         isLoadingNozzles = false;
       });
+
+      print('Nozzle selling price: $nozzleSellingPrice');
     } catch (e) {
       print('Error fetching previous index: $e');
       setState(() {
         previousIndex = "N/A";
+        nozzleSellingPrice = 1500.0; // Default selling price
         isLoadingNozzles = false;
       });
     }
@@ -176,18 +184,19 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
       // Get nozzle details
       final nozzleId = int.tryParse(selectedNozzle!) ?? 0;
 
-      // Get product and price details from nozzle data with null safety
-      final productId = selectedNozzleData?['productId'] ?? 1;
-      final sellingPrice = selectedNozzleData?['selling_price'] ?? 1500;
+      // Use the selling price from the nozzle index response
+      final productId = selectedNozzleData?['tank_id'] ?? 1;
+      final sellingPrice =
+          nozzleSellingPrice ?? 1500.0; // Use the fetched selling price
+
+      print("Using selling price: $sellingPrice");
 
       await PumpService.submitPumpIndex(
         nozzleId: nozzleId,
         productId: productId is int
             ? productId
             : int.tryParse(productId.toString()) ?? 1,
-        sellingPrice: sellingPrice is double
-            ? sellingPrice
-            : double.tryParse(sellingPrice.toString()) ?? 1500.0,
+        sellingPrice: sellingPrice,
         shiftsiteId: selectedShift!,
         startIndex: startIndex,
         endIndex: endIndex,
@@ -480,13 +489,13 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                      Text(
-                                        'ID: ${pump['pomp_id']}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
+                                      // Text(
+                                      //   'ID: ${pump['pomp_id']}',
+                                      //   style: TextStyle(
+                                      //     fontSize: 12,
+                                      //     color: Colors.grey[600],
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 );
@@ -586,13 +595,13 @@ class _PumpIndexingScreenState extends State<PumpIndexingScreen> {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                Text(
-                                  'Code: ${nozzle['nozle_code']} | ID: ${nozzle['nozzle_id']}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
+                                // Text(
+                                //   'Code: ${nozzle['nozle_code']} | ID: ${nozzle['nozzle_id']}',
+                                //   style: TextStyle(
+                                //     fontSize: 12,
+                                //     color: Colors.grey[600],
+                                //   ),
+                                // ),
                               ],
                             ),
                           );
