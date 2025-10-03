@@ -336,31 +336,65 @@ class _VerifyticketState extends State<Verifyticket> {
           throw Exception("User is not authenticated");
         }
 
-        dynamic paymentValue;
-        if (widget.successfulScansCount > 1) {
-          // Create an array with length equal to successfulScansCount
-          double actualPayment = double.parse(_paymentController.text);
-          paymentValue = List<double>.filled(widget.successfulScansCount, 0.0);
-          // Set the last element to the actual payment amount
-          paymentValue[widget.successfulScansCount - 1] = actualPayment;
-        } else {
-          // For a single scan, use the regular payment value
-          paymentValue = double.parse(_paymentController.text);
-        }
-        final paymentValuesss = [_paymentController.text];
+        // Create properly formatted payment array
+        List<double> paymentArray = [];
+        double totalPayment = double.parse(_paymentController.text);
+        double balanceValue = double.parse(_balanceController.text);
 
-        dynamic balanceValue;
-        if (widget.successfulScansCount > 1) {
-          // Create an array with length equal to successfulScansCount
-          double actualBalance = double.parse(_balanceController.text);
-          balanceValue = List<double>.filled(widget.successfulScansCount, 0.0);
-          // Set the last element to the actual balance
-          balanceValue[widget.successfulScansCount - 1] = actualBalance;
-        } else {
-          // For a single scan, use the regular balance value
-          paymentValue = [double.parse(_paymentController.text)];
+        // Get the amount per ticket based on the verification result
+        List<double> ticketAmounts = widget.ticketAmounts;
+        int ticketsCount = widget.successfulScansCount;
+
+        // Declare balanceArray outside the conditional block so it's in scope for the request body
+        List<double> balanceArray = [];
+
+        if (ticketsCount > 0) {
+          // Apply full payment to each ticket (up to the ticket's value) until no payment is left
+          // Any remaining balance will be applied to the last ticket
+          paymentArray = List<double>.filled(ticketsCount, 0.0);
+          balanceArray = List<double>.filled(ticketsCount, 0.0);
+
+          // If full payment selected, distribute payment among all tickets
+          if (_isFullPayment) {
+            // Apply the ticket amount as payment for each ticket
+            for (int i = 0; i < ticketsCount; i++) {
+              paymentArray[i] = ticketAmounts[i];
+              balanceArray[i] = 0.0; // No balance when full payment
+            }
+          } else {
+            // For partial payment:
+            // Apply payment to as many full tickets as possible
+            double remainingPayment = totalPayment;
+
+            for (int i = 0; i < ticketsCount - 1 && remainingPayment > 0; i++) {
+              double ticketAmount = ticketAmounts[i];
+
+              // If enough payment left for full ticket
+              if (remainingPayment >= ticketAmount) {
+                paymentArray[i] = ticketAmount;
+                remainingPayment -= ticketAmount;
+              } else {
+                // Not enough for full ticket, put partial payment
+                paymentArray[i] = remainingPayment;
+                balanceArray[i] = ticketAmount - remainingPayment;
+                remainingPayment = 0;
+              }
+            }
+
+            // Handle the last ticket
+            int lastIndex = ticketsCount - 1;
+            double lastTicketAmount = ticketAmounts[lastIndex];
+
+            if (remainingPayment >= lastTicketAmount) {
+              paymentArray[lastIndex] = lastTicketAmount;
+              balanceArray[lastIndex] = 0.0;
+            } else {
+              paymentArray[lastIndex] = remainingPayment;
+              balanceArray[lastIndex] = lastTicketAmount - remainingPayment;
+            }
+          }
         }
-        print('balanceValue *******************; $balanceValue');
+
         // Prepare request body for updateCoupon
         Map<String, dynamic> requestBody = {
           "token": tokenList,
@@ -370,16 +404,17 @@ class _VerifyticketState extends State<Verifyticket> {
           "pin": _pinController.text,
           "product": _productName,
           "plateNumber": _plateNumberController.text,
-          "qty": _qtyController.text,
+          "qty": double.parse(_qtyController.text),
           "ref": getInvoiceId(),
-          // "balance": _balanceController.text,
-          "balance": balanceValue,
-          "payMont": paymentValue,
-          "couponIds": CoupIDList
+          "balance": balanceArray,
+          "payMont": paymentArray,
+          "couponIds": CoupIDList,
+          "site_id": user.siteId.toString(),
         };
 
         print("Using assign_id: $assign_id");
         print("Request body - quantity: ${requestBody['qty']}");
+        print("Request body: $requestBody");
 
         // Send the POST request to updateCoupon
         final response = await http.post(
@@ -482,39 +517,46 @@ class _VerifyticketState extends State<Verifyticket> {
         (product) => product['id'] == _selectedProductId,
         orElse: () => {},
       );
-      _totalPrice = double.parse(_paymentController.text);
 
       // Get the product price from the selected product
       final productPrice = selectedProduct['price'] != null
           ? double.tryParse(selectedProduct['price'].toString()) ?? 0.0
           : 0.0;
 
+      // Calculate total amount from payment controller
+      _totalPrice = double.parse(_paymentController.text);
+
       print('Selected product price: $productPrice');
 
       final customerId = widget.verificationResult?['client']?['id'] ?? '0';
       print('UUUUUUUUUUUUUUUUUUU  $customerId');
+
+      // Convert qty to a number
+      double qty = double.parse(_qtyController.text);
+
       // Prepare request body for val_trans
       Map<String, dynamic> valTransBody = {
-        'assign_id': assign_id,
-        'qty': _qtyController.text,
-        'price_id': _selectedProductId ?? '0',
-        'totalAmount': _totalPrice ?? 0,
-        'ste_id': user.siteId.toString(),
-        'co_id': user.cpyid.toString(),
-        'customer_id': custId.toString(),
-        'rec_by': user.userId.toString(),
-        'balance': _balanceController.text,
+        'assign_id': int.tryParse(assign_id) ?? 0,
+        'qty': qty,
+        'price': productPrice,
+        'price_id': int.tryParse(_selectedProductId ?? '0') ?? 0,
+        'ste_id': int.tryParse(user.siteId.toString()) ?? 0,
+        'co_id': int.tryParse(user.cpyid.toString()) ?? 0,
+        'customer_id': int.tryParse(custId.toString()) ?? 0,
+        'rec_by': int.tryParse(user.userId.toString()) ?? 0,
+        'balance': double.parse(_balanceController.text),
         'plate_no': _plateNumberController.text,
         'ref': getInvoiceId(),
         'product': _productName,
-        'price': productPrice, // Added product price to the request
+        'totalAmount': _totalPrice,
       };
 
       print("val_trans request body: $valTransBody");
 
       // Send the POST request to val_trans
       final valTransResponse = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/Sunmi_POS_App_V2/api.php/val_trans'),
+        Uri.parse(
+            '${AppConfig.baseUrl}/Sunmi_POS_App_V2/api.php/val_trans'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(valTransBody),
       );
