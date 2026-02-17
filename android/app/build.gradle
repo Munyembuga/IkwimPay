@@ -5,7 +5,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
     namespace = "com.itec.ikwimpays"
@@ -39,11 +43,18 @@ android {
         multiDexEnabled true
     }
 
-    
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
             // minifyEnabled true
             // shrinkResources false  // Disable resource shrinking
             // // resConfigs "en"  // You can specify the default resource language
