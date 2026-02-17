@@ -28,12 +28,17 @@ echo ""
 
 # Check if keystore exists
 if [ ! -f "android/key.properties" ]; then
-    echo -e "${YELLOW}Warning: android/key.properties not found${NC}"
-    echo "Creating default key.properties..."
-    echo "storePassword=android123" > android/key.properties
-    echo "keyPassword=android123" >> android/key.properties
-    echo "keyAlias=ikwimpay" >> android/key.properties
-    echo "storeFile=ikwimpay-release.keystore" >> android/key.properties
+    echo -e "${RED}Error: android/key.properties not found${NC}"
+    echo ""
+    echo "Please create the key.properties file with your keystore information."
+    echo "See BUILD_AAB.md for instructions on creating a keystore."
+    echo ""
+    echo "Example key.properties content:"
+    echo "  storePassword=YOUR_STORE_PASSWORD"
+    echo "  keyPassword=YOUR_KEY_PASSWORD"
+    echo "  keyAlias=YOUR_KEY_ALIAS"
+    echo "  storeFile=YOUR_KEYSTORE_FILE.keystore"
+    exit 1
 fi
 
 if [ ! -f "android/ikwimpay-release.keystore" ]; then
